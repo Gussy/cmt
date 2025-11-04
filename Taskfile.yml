@@ -1,0 +1,97 @@
+version: '3'
+
+vars:
+  BINARY: cmt
+  MAIN: ./cmd/cmt
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
+  BUILD_TIME:
+    sh: date -u +"%Y-%m-%dT%H:%M:%SZ"
+
+silent: true
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build binary for current platform
+    cmds:
+      - go build -ldflags "-s -w -X main.Version={{.VERSION}} -X main.BuildTime={{.BUILD_TIME}}" -o {{.BINARY}} {{.MAIN}}
+    sources:
+      - ./**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - ./{{.BINARY}}
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run {{.MAIN}} {{.CLI_ARGS}}
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v -race ./...
+
+  test:coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      - go tool cover -html=coverage.txt -o coverage.html
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f {{.BINARY}}
+      - rm -rf dist/
+      - rm -f coverage.txt coverage.html
+
+  install:
+    desc: Install to $GOPATH/bin
+    cmds:
+      - go install -ldflags "-s -w -X main.Version={{.VERSION}} -X main.BuildTime={{.BUILD_TIME}}" {{.MAIN}}
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./...
+    status:
+      - command -v golangci-lint
+
+  release:
+    desc: Create a release with GoReleaser
+    cmds:
+      - goreleaser release --clean
+    preconditions:
+      - sh: command -v goreleaser
+        msg: "Please install goreleaser: go install github.com/goreleaser/goreleaser/v2@latest"
+
+  release:dry:
+    desc: Test release without publishing
+    cmds:
+      - goreleaser release --snapshot --clean
+    preconditions:
+      - sh: command -v goreleaser
+        msg: "Please install goreleaser: go install github.com/goreleaser/goreleaser/v2@latest"
+
+  check:
+    desc: Run all checks before commit
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: test
+      - task: build

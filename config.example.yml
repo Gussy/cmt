@@ -1,0 +1,195 @@
+# cmt Configuration File Example
+#
+# This file demonstrates all available configuration options for cmt.
+#
+# Configuration files can be placed in these locations (in order of precedence):
+#   1. Environment variables (CMT_* prefix) - Highest priority
+#   2. .cmt.yml (local, project-specific) - Per-project settings
+#   3. ~/.config/cmt/config.yml (global, XDG standard) - User defaults
+#
+# To use this example:
+#   - Copy to .cmt.yml for project-specific settings
+#   - Copy to ~/.config/cmt/config.yml for user-wide defaults
+#
+# All settings are optional and will use defaults if not specified.
+
+# ===================
+# AI Settings
+# ===================
+
+# AI model to use for commit message generation
+# Available models:
+#   - claude-3-5-sonnet-latest (default, balanced performance)
+#   - haiku-4.5 (fastest, good for simple commits)
+#   - sonnet-4.5 (better quality)
+#   - opus-4.1 (highest quality, slowest)
+# Environment: CMT_MODEL
+model: claude-3-5-sonnet-latest
+
+# Temperature for AI generation (0.0-1.0)
+# Lower values (0.0-0.3): More deterministic, consistent output
+# Medium values (0.3-0.7): Balanced creativity and consistency
+# Higher values (0.7-1.0): More creative, varied output
+# Default: 0.2 (fairly deterministic for consistency)
+# Environment: CMT_TEMPERATURE
+temperature: 0.2
+
+# Maximum tokens for AI response
+# This limits the length of generated commit messages
+# Typical commit messages: 100-300 tokens
+# Detailed messages with body: 300-500 tokens
+# Default: 500 (allows for detailed messages)
+# Environment: CMT_MAX_TOKENS
+max_tokens: 500
+
+# ===================
+# Behavior Settings
+# ===================
+
+# Always require scope in commit messages
+# When true: Forces conventional commit format with scope
+#   Example: "feat(auth): add login functionality"
+# When false: Scope is optional
+#   Example: "feat: add login functionality" or "feat(auth): add login functionality"
+# Default: false
+# Environment: CMT_ALWAYS_SCOPE
+always_scope: false
+
+# Enable verbose logging for debugging
+# Shows detailed information about:
+#   - Files being processed
+#   - Diff statistics
+#   - AI model interactions
+#   - Processing steps
+# Useful for troubleshooting or understanding gac behavior
+# Default: false
+# Environment: CMT_VERBOSE
+verbose: false
+
+# Skip secret scanning before commits
+# WARNING: Disabling this may allow secrets to be committed!
+# Only disable if you're certain no secrets are in your changes or
+# if you have other secret scanning tools in place.
+# Scans for: API keys, tokens, passwords, private keys, etc.
+# Default: false (scanning enabled)
+# Environment: CMT_SKIP_SECRET_SCAN
+skip_secret_scan: false
+
+# Path to custom prompt template file
+# Allows you to customize the prompt sent to the AI model
+# File should contain prompt text with optional placeholders:
+#   {{diff}} - The git diff content
+#   {{hint}} - User-provided hint (if any)
+#   {{scope}} - Scope for conventional commits
+# Leave empty to use built-in prompts
+# Example: "/home/user/.config/gac/my-prompt.txt"
+# Default: "" (use built-in prompts)
+# Environment: CMT_CUSTOM_PROMPT_PATH
+custom_prompt_path: ""
+
+# ===================
+# UI Settings
+# ===================
+
+# Enable colored terminal output
+# Adds color to enhance readability:
+#   - Success messages (green)
+#   - Warnings (yellow)
+#   - Errors (red)
+#   - Info messages (blue)
+# Set to false for environments that don't support color or for log files
+# Default: true
+# Environment: CMT_COLOR_OUTPUT
+color_output: true
+
+# Enable interactive Bubble Tea UI
+# When true: Shows interactive review interface with:
+#   - Scrollable diff preview
+#   - Accept/reject/regenerate options
+#   - Edit capability
+# When false: Auto-accepts generated message (useful for CI/CD)
+# Default: true
+# Environment: CMT_INTERACTIVE
+interactive: true
+
+# Editor mode for commit message editing
+# Controls how the 'e' (edit) option works in interactive mode:
+#   - "inline": Opens a text area within the TUI for quick edits
+#   - "external": Launches system editor ($EDITOR, vim, or nano)
+# External is useful for complex edits or if you prefer your editor
+# Default: "inline"
+# Environment: CMT_EDITOR_MODE
+editor_mode: inline
+
+# ===================
+# Preprocessing Settings
+# ===================
+
+# Maximum tokens to include from diff context
+# Large diffs are truncated to fit within AI model context limits
+# Estimation: ~4 characters = 1 token
+# Examples:
+#   - 4096 tokens: ~16KB of diff (good for small changes)
+#   - 8192 tokens: ~32KB of diff (balanced)
+#   - 16384 tokens: ~64KB of diff (default, handles most commits)
+#   - 32768 tokens: ~128KB of diff (for very large changes)
+# Default: 16384
+# Environment: CMT_MAX_DIFF_TOKENS
+max_diff_tokens: 16384
+
+# Filter out binary files from diff
+# Excludes files like:
+#   - Images (*.jpg, *.png, *.gif, etc.)
+#   - Documents (*.pdf, *.doc, etc.)
+#   - Archives (*.zip, *.tar, etc.)
+#   - Compiled binaries (*.exe, *.dll, etc.)
+# Binary files don't provide useful context for commit messages
+# Default: true
+# Environment: CMT_FILTER_BINARY
+filter_binary: true
+
+# Filter out minified files
+# Excludes files like:
+#   - *.min.js (minified JavaScript)
+#   - *.min.css (minified CSS)
+#   - Other minified assets
+# Minified code is not human-readable and doesn't help message generation
+# Default: true
+# Environment: CMT_FILTER_MINIFIED
+filter_minified: true
+
+# Filter out generated files
+# Excludes files that appear to be auto-generated:
+#   - Files with "generated" in header comments
+#   - Common generated patterns (*.pb.go, *.gen.go, etc.)
+#   - Build artifacts
+# Generated files often contain boilerplate that clutters the diff
+# Default: true
+# Environment: CMT_FILTER_GENERATED
+filter_generated: true
+
+# ===================
+# Example Configurations
+# ===================
+
+# Example 1: Fast, simple commits
+# model: haiku-4.5
+# max_tokens: 200
+# interactive: false
+
+# Example 2: High-quality, detailed commits
+# model: opus-4.1
+# temperature: 0.3
+# max_tokens: 800
+# verbose: true
+
+# Example 3: CI/CD environment
+# interactive: false
+# color_output: false
+# skip_secret_scan: false
+# verbose: true
+
+# Example 4: Strict conventional commits
+# always_scope: true
+# model: sonnet-4.5
+# temperature: 0.1
