@@ -137,16 +137,17 @@ func (m reviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.done = true
 				return m, tea.Quit
 
-			default:
-				// Check for Ctrl+Enter
-				if msg.String() == "ctrl+enter" || (msg.Type == tea.KeyEnter && msg.Alt) {
-					// Save the edited message.
+			case tea.KeyEnter:
+				// Check if it's plain Enter (submit) vs Shift+Enter (newline).
+				if msg.String() != "shift+enter" {
+					// Submit the edited message.
 					m.message = m.editTextarea.Value()
 					m.editMode = false
 					m.action = ReviewEditInline
 					m.done = true
 					return m, tea.Quit
 				}
+				// Shift+Enter falls through to textarea for newline.
 			}
 
 			// Update edit textarea.
@@ -403,7 +404,7 @@ func (m reviewModel) viewEditMode() string {
 	s.WriteString("\n\n")
 
 	// Help text.
-	s.WriteString(helpStyle.Render("Ctrl+Enter to save • Esc to cancel"))
+	s.WriteString(helpStyle.Render("Enter to save • Shift+Enter for newline • Esc to cancel"))
 
 	return s.String()
 }
