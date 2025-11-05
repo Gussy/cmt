@@ -39,6 +39,27 @@ mv cmt /usr/local/bin/
 cmt --help
 ```
 
+### Shell Completions
+
+Shell completions are automatically installed with Homebrew. For manual installations, generate completion scripts for your shell:
+
+**Bash:**
+```bash
+cmt completion bash > ~/.local/share/bash-completion/completions/cmt
+```
+
+**Zsh:**
+```bash
+cmt completion zsh > "${fpath[1]}/_cmt"
+```
+
+**Fish:**
+```bash
+cmt completion fish > ~/.config/fish/completions/cmt.fish
+```
+
+After installing completions, restart your shell or source your shell configuration file.
+
 ## Configuration
 
 Create a `.cmt.yml` in your project root or `~/.config/cmt/config.yml` globally:

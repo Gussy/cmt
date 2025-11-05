@@ -25,9 +25,10 @@ var (
 
 func main() {
 	app := &cli.Command{
-		Name:    "cmt",
-		Usage:   "Commit Message Tool - Generate contextual commit messages using Claude AI",
-		Version: fmt.Sprintf("%s (built %s)", Version, BuildTime),
+		Name:                  "cmt",
+		Usage:                 "Commit Message Tool - Generate contextual commit messages using Claude AI",
+		Version:               fmt.Sprintf("%s (built %s)", Version, BuildTime),
+		EnableShellCompletion: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "stage-all",

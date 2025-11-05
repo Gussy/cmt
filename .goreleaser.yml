@@ -3,6 +3,7 @@ version: 2
 before:
   hooks:
     - go mod tidy
+    - task completions:gen
 
 builds:
   - main: ./cmd/cmt
@@ -26,8 +27,12 @@ builds:
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - completions/*
 
-brews:
+homebrew_casks:
   - repository:
       owner: gussy
       name: homebrew-tap
@@ -35,10 +40,12 @@ brews:
     homepage: "https://github.com/gussy/cmt"
     description: "Generate contextual git commit messages using Claude AI"
     license: "MIT"
-    test: |
-      system "#{bin}/cmt --version"
-    install: |
-      bin.install "cmt"
+    binaries:
+      - cmt
+    completions:
+      bash: completions/cmt.bash
+      zsh: completions/_cmt
+      fish: completions/cmt.fish
 
 checksum:
   name_template: "checksums.txt"

@@ -55,6 +55,17 @@ tasks:
     cmds:
       - go install -ldflags "-s -w -X main.Version={{.VERSION}} -X main.BuildTime={{.BUILD_TIME}}" {{.MAIN}}
 
+  completions:gen:
+    desc: Generate shell completion scripts
+    deps:
+      - build
+    cmds:
+      - mkdir -p completions
+      - ./{{.BINARY}} completion bash > completions/cmt.bash
+      - ./{{.BINARY}} completion zsh > completions/_cmt
+      - ./{{.BINARY}} completion fish > completions/cmt.fish
+      - echo "Generated completion scripts in completions/"
+
   fmt:
     desc: Format code
     cmds:
