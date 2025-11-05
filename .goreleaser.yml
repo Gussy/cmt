@@ -46,6 +46,15 @@ homebrew_casks:
       bash: completions/cmt.bash
       zsh: completions/_cmt
       fish: completions/cmt.fish
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/cmt"]
+          end
+    caveats: |
+      Note: This tool removes macOS quarantine attributes to allow execution.
+      The binary is not code-signed or notarized by Apple.
 
 checksum:
   name_template: "checksums.txt"
