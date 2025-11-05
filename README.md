@@ -21,7 +21,7 @@
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install gussy/tap/cmt
+brew install --cask gussy/tap/cmt
 ```
 
 ### Manual Installation
