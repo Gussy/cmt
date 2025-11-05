@@ -10,9 +10,15 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
+      - linux
       - darwin
+      - windows
     goarch:
+      - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
     ldflags:
       - -s -w
       - -X main.Version={{.Version}}
@@ -35,5 +41,5 @@ changelog:
       - "^test:"
 
 release:
-  draft: true
+  draft: false
   prerelease: auto
