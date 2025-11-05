@@ -27,6 +27,19 @@ builds:
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
+brews:
+  - repository:
+      owner: gussy
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/gussy/cmt"
+    description: "Generate contextual git commit messages using Claude AI"
+    license: "MIT"
+    test: |
+      system "#{bin}/cmt --version"
+    install: |
+      bin.install "cmt"
+
 checksum:
   name_template: "checksums.txt"
 

@@ -18,6 +18,15 @@
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap gussy/tap
+brew install cmt
+```
+
+### Manual Installation
+
 Download the latest release for your platform from [GitHub Releases](https://github.com/gussy/cmt/releases):
 
 ```bash
