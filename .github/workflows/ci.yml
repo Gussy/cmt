@@ -9,40 +9,21 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        go-version: ['1.22', '1.23']
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Activate Hermit
+        uses: cashapp/activate-hermit@v1.1.4
         with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Verify dependencies
-        run: go mod verify
+          cache: "true"
 
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: task test:coverage
 
       - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.22'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
@@ -56,45 +37,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Activate Hermit
+        uses: cashapp/activate-hermit@v1.1.4
         with:
-          go-version: '1.22'
+          cache: "true"
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          args: --timeout=5m
+      - name: Run linters
+        run: task lint
 
   build:
     name: Build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [amd64, arm64]
-        exclude:
-          - os: windows-latest
-            arch: arm64
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Activate Hermit
+        uses: cashapp/activate-hermit@v1.1.4
         with:
-          go-version: '1.22'
+          cache: "true"
 
-      - name: Build binary
-        env:
-          GOOS: ${{ runner.os == 'Linux' && 'linux' || runner.os == 'macOS' && 'darwin' || 'windows' }}
-          GOARCH: ${{ matrix.arch }}
+      - name: Build for all platforms
         run: |
-          go build -v -o cmt-${{ runner.os }}-${{ matrix.arch }} ./cmd/cmt
+          # Linux
+          GOOS=linux GOARCH=amd64 go build -v -o cmt-linux-amd64 ./cmd/cmt
+          GOOS=linux GOARCH=arm64 go build -v -o cmt-linux-arm64 ./cmd/cmt
 
-      - name: Test binary
-        if: matrix.arch == 'amd64'  # Only test on amd64 since we're running on amd64
+          # macOS
+          GOOS=darwin GOARCH=amd64 go build -v -o cmt-darwin-amd64 ./cmd/cmt
+          GOOS=darwin GOARCH=arm64 go build -v -o cmt-darwin-arm64 ./cmd/cmt
+
+          # Windows
+          GOOS=windows GOARCH=amd64 go build -v -o cmt-windows-amd64.exe ./cmd/cmt
+
+      - name: Verify builds
         run: |
-          ./cmt-${{ runner.os }}-${{ matrix.arch }} --version
+          ls -lh cmt-*
