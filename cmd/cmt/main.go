@@ -120,6 +120,7 @@ func main() {
 					return showDiff(ctx)
 				},
 			},
+			absorbCommand(),
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			return runCommit(ctx, cmd)

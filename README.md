@@ -5,6 +5,7 @@
 ## Key Features
 
 - **AI-Powered Messages** - Generates contextual commit messages using Claude AI (supports Haiku, Sonnet, and Opus models)
+- **AI-Driven Absorb** - Intelligently assigns staged hunks to previous commits using semantic analysis (like git-absorb but smarter)
 - **Interactive Review UI** - Built-in TUI for reviewing, regenerating, or editing messages before committing
 - **Secret Detection** - Scans staged files for 15+ secret patterns (AWS keys, GitHub tokens, JWTs, private keys)
 - **Smart Diff Processing** - Filters binary files, minified code, and generated files; truncates large diffs intelligently
@@ -75,11 +76,13 @@ See [config.example.yml](config.example.yml) for all available options.
 
 ### Environment Variables
 
-Override any configuration option with `GAC_*` prefix:
+Override any configuration option with `CMT_*` prefix:
 
 ```bash
-export GAC_MODEL=sonnet-4.5
-export GAC_VERBOSE=true
+export CMT_MODEL=sonnet-4.5
+export CMT_VERBOSE=true
+export CMT_ABSORB_STRATEGY=direct
+export CMT_ABSORB_CONFIDENCE=0.8
 ```
 
 ## How It Works
@@ -113,4 +116,78 @@ cmt --model sonnet-4.5
 
 # Initialize config file
 cmt init
+```
+
+## AI-Driven Absorb Feature
+
+The `cmt absorb` command uses AI to intelligently assign staged changes to previous commits based on semantic similarity. This is similar to `git-absorb` but with AI-powered understanding of code context and meaning.
+
+### How It Works
+
+1. Analyzes your staged changes and splits them into individual hunks
+2. Uses AI to match each hunk with the most semantically related previous commit
+3. Creates fixup commits that can be autosquashed into the target commits
+4. Provides an interactive UI to review and modify assignments
+5. Optionally performs an autosquash rebase automatically
+
+### Absorb Usage
+
+```bash
+# Basic absorb (analyzes unpushed commits)
+cmt absorb
+
+# Skip interactive review
+cmt absorb --yes
+
+# Analyze specific number of commits
+cmt absorb --depth 5
+
+# Analyze all commits back to branch point
+cmt absorb --to-branch-point
+
+# Dry run to preview without changes
+cmt absorb --dry-run
+
+# Automatically rebase after creating fixup commits
+cmt absorb --rebase
+
+# Undo the last absorb operation
+cmt absorb --undo
+```
+
+### Absorb Configuration
+
+Add to your `.cmt.yml`:
+
+```yaml
+# Absorb-specific settings
+absorb_strategy: fixup        # fixup (default) or direct
+absorb_range: unpushed        # unpushed (default) or branch-point
+absorb_ambiguity: interactive # interactive (default) or best-match
+absorb_auto_commit: true      # Create new commit for unmatched hunks
+absorb_confidence: 0.7        # Min confidence threshold (0.0-1.0)
+```
+
+### Absorb Workflow Example
+
+```bash
+# Make various fixes across multiple files
+vim src/auth.js    # Fix auth bug
+vim src/api.js     # Update API endpoint
+vim tests/auth.js  # Fix related test
+
+# Stage all changes
+git add -A
+
+# Use AI to absorb changes into relevant commits
+cmt absorb
+
+# Review assignments in the interactive UI
+# - Navigate with arrow keys or tab
+# - Press 'a' to see alternative assignments
+# - Press 'u' to unassign a hunk
+# - Press 'y' to accept assignments
+
+# Complete with autosquash rebase
+git rebase --autosquash -i HEAD~3
 ```

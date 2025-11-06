@@ -32,6 +32,13 @@ type Config struct {
 	FilterBinary    bool `yaml:"filter_binary"`
 	FilterMinified  bool `yaml:"filter_minified"`
 	FilterGenerated bool `yaml:"filter_generated"`
+
+	// Absorb settings
+	AbsorbStrategy    string  `yaml:"absorb_strategy"`     // "fixup" (default) or "direct"
+	AbsorbRange       string  `yaml:"absorb_range"`        // "unpushed" (default) or "branch-point"
+	AbsorbAmbiguity   string  `yaml:"absorb_ambiguity"`    // "interactive" (default) or "best-match"
+	AbsorbAutoCommit  bool    `yaml:"absorb_auto_commit"`  // true (default) - create commit for unmatched
+	AbsorbConfidence  float64 `yaml:"absorb_confidence"`   // 0.7 (default) - min confidence threshold
 }
 
 // Default returns the default configuration.
@@ -50,6 +57,11 @@ func Default() *Config {
 		FilterBinary:    true,
 		FilterMinified:  true,
 		FilterGenerated: true,
+		AbsorbStrategy:   "fixup",
+		AbsorbRange:      "unpushed",
+		AbsorbAmbiguity:  "interactive",
+		AbsorbAutoCommit: true,
+		AbsorbConfidence: 0.7,
 	}
 }
 
@@ -154,6 +166,25 @@ func applyEnvOverrides(config *Config) {
 	if filterGenerated := os.Getenv("CMT_FILTER_GENERATED"); filterGenerated != "" {
 		config.FilterGenerated = parseBool(filterGenerated)
 	}
+
+	// Absorb settings
+	if absorbStrategy := os.Getenv("CMT_ABSORB_STRATEGY"); absorbStrategy != "" {
+		config.AbsorbStrategy = absorbStrategy
+	}
+	if absorbRange := os.Getenv("CMT_ABSORB_RANGE"); absorbRange != "" {
+		config.AbsorbRange = absorbRange
+	}
+	if absorbAmbiguity := os.Getenv("CMT_ABSORB_AMBIGUITY"); absorbAmbiguity != "" {
+		config.AbsorbAmbiguity = absorbAmbiguity
+	}
+	if absorbAutoCommit := os.Getenv("CMT_ABSORB_AUTO_COMMIT"); absorbAutoCommit != "" {
+		config.AbsorbAutoCommit = parseBool(absorbAutoCommit)
+	}
+	if absorbConfidence := os.Getenv("CMT_ABSORB_CONFIDENCE"); absorbConfidence != "" {
+		if val, err := strconv.ParseFloat(absorbConfidence, 64); err == nil {
+			config.AbsorbConfidence = val
+		}
+	}
 }
 
 // parseBool parses a string as a boolean value.
@@ -233,6 +264,17 @@ func (c *Config) Get(key string) (interface{}, error) {
 		return c.FilterMinified, nil
 	case "filter_generated":
 		return c.FilterGenerated, nil
+	// Absorb settings
+	case "absorb_strategy":
+		return c.AbsorbStrategy, nil
+	case "absorb_range":
+		return c.AbsorbRange, nil
+	case "absorb_ambiguity":
+		return c.AbsorbAmbiguity, nil
+	case "absorb_auto_commit":
+		return c.AbsorbAutoCommit, nil
+	case "absorb_confidence":
+		return c.AbsorbConfidence, nil
 	default:
 		return nil, fmt.Errorf("unknown configuration key: %s", key)
 	}
@@ -289,6 +331,33 @@ func (c *Config) Set(key string, value string) error {
 		c.FilterMinified = parseBool(value)
 	case "filter_generated":
 		c.FilterGenerated = parseBool(value)
+	// Absorb settings
+	case "absorb_strategy":
+		if value != "fixup" && value != "direct" {
+			return fmt.Errorf("invalid absorb_strategy value: %s (must be fixup or direct)", value)
+		}
+		c.AbsorbStrategy = value
+	case "absorb_range":
+		if value != "unpushed" && value != "branch-point" {
+			return fmt.Errorf("invalid absorb_range value: %s (must be unpushed or branch-point)", value)
+		}
+		c.AbsorbRange = value
+	case "absorb_ambiguity":
+		if value != "interactive" && value != "best-match" {
+			return fmt.Errorf("invalid absorb_ambiguity value: %s (must be interactive or best-match)", value)
+		}
+		c.AbsorbAmbiguity = value
+	case "absorb_auto_commit":
+		c.AbsorbAutoCommit = parseBool(value)
+	case "absorb_confidence":
+		val, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid absorb_confidence value: %s", value)
+		}
+		if val < 0.0 || val > 1.0 {
+			return fmt.Errorf("absorb_confidence must be between 0.0 and 1.0")
+		}
+		c.AbsorbConfidence = val
 	default:
 		return fmt.Errorf("unknown configuration key: %s", key)
 	}

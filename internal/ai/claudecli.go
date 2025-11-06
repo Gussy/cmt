@@ -3,10 +3,13 @@ package ai
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/gussy/cmt/internal/git"
 )
 
 // ClaudeCLI implements the Provider interface using the Claude Code CLI.
@@ -115,6 +118,39 @@ func (c *ClaudeCLI) RegenerateWithFeedback(ctx context.Context, req *CommitReque
 		Body:    body,
 		Model:   c.getModelName(req.Model),
 	}, nil
+}
+
+// AnalyzeHunkAssignment analyzes which hunks should be absorbed into which commits.
+func (c *ClaudeCLI) AnalyzeHunkAssignment(ctx context.Context, req *AbsorbRequest) (*AbsorbResponse, error) {
+	if len(req.Hunks) == 0 {
+		return nil, NewProviderError(c.Name(), "no hunks provided", nil)
+	}
+
+	if len(req.Commits) == 0 {
+		// No commits to absorb into, all hunks are unmatched.
+		return &AbsorbResponse{
+			UnmatchedHunks: req.Hunks,
+			Model:          c.getModelName(req.Model),
+		}, nil
+	}
+
+	// Build the absorb prompt.
+	prompt := c.buildAbsorbPrompt(req)
+
+	// Execute claude command.
+	response, err := c.executeClaudeCommand(ctx, prompt, req.Model)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the JSON response.
+	absorbResp, err := c.parseAbsorbResponse(response, req)
+	if err != nil {
+		return nil, NewProviderError(c.Name(), fmt.Sprintf("failed to parse absorb response: %v", err), err)
+	}
+
+	absorbResp.Model = c.getModelName(req.Model)
+	return absorbResp, nil
 }
 
 // GetDefaultModel returns the default model for Claude CLI.
@@ -339,4 +375,246 @@ func (c *ClaudeCLI) getModelName(model string) string {
 		model = c.GetDefaultModel()
 	}
 	return model
+}
+
+// buildAbsorbPrompt builds the prompt for hunk assignment analysis.
+func (c *ClaudeCLI) buildAbsorbPrompt(req *AbsorbRequest) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("You are analyzing git diff hunks to determine which previous commits they should be absorbed into.\n")
+	prompt.WriteString("Each hunk should be matched with the most semantically related commit based on:\n")
+	prompt.WriteString("1. File paths and names\n")
+	prompt.WriteString("2. Code context and functionality\n")
+	prompt.WriteString("3. Commit message relevance\n")
+	prompt.WriteString("4. Related changes in the same area\n\n")
+
+	if req.Strategy == "best-match" {
+		prompt.WriteString(fmt.Sprintf("Confidence threshold: %.2f (assign only if confidence is above this)\n", req.ConfidenceThreshold))
+		prompt.WriteString("Strategy: Choose the single best matching commit for each hunk.\n\n")
+	} else {
+		prompt.WriteString("Strategy: Provide alternatives when multiple commits could match.\n\n")
+	}
+
+	// Add commits information.
+	prompt.WriteString("Available commits (from oldest to newest):\n")
+	prompt.WriteString("=====================================\n")
+	for i, commit := range req.Commits {
+		// Get first line of commit message.
+		lines := strings.Split(commit.Message, "\n")
+		firstLine := lines[0]
+		if len(firstLine) > 72 {
+			firstLine = firstLine[:69] + "..."
+		}
+
+		prompt.WriteString(fmt.Sprintf("\nCommit %d: %s\n", i+1, commit.SHA[:8]))
+		prompt.WriteString(fmt.Sprintf("Message: %s\n", firstLine))
+
+		// Add a summary of the commit diff.
+		if len(commit.Diff) > 0 {
+			prompt.WriteString("Changed files:\n")
+			for _, line := range strings.Split(commit.Diff, "\n") {
+				if strings.HasPrefix(line, "diff --git") {
+					parts := strings.Split(line, " ")
+					if len(parts) >= 4 {
+						file := strings.TrimPrefix(parts[3], "b/")
+						prompt.WriteString(fmt.Sprintf("  - %s\n", file))
+					}
+				}
+			}
+		}
+	}
+
+	// Add hunks to analyze.
+	prompt.WriteString("\n\nHunks to analyze:\n")
+	prompt.WriteString("================\n")
+	for i, hunk := range req.Hunks {
+		prompt.WriteString(fmt.Sprintf("\nHunk %d:\n", i+1))
+		prompt.WriteString(fmt.Sprintf("File: %s\n", hunk.FilePath))
+		if hunk.IsNew {
+			prompt.WriteString("Status: NEW FILE\n")
+		} else if hunk.IsDeleted {
+			prompt.WriteString("Status: DELETED FILE\n")
+		} else if hunk.IsRenamed {
+			prompt.WriteString(fmt.Sprintf("Status: RENAMED from %s\n", hunk.OldFilePath))
+		}
+		prompt.WriteString(fmt.Sprintf("Lines: %s\n", hunk.Header))
+		prompt.WriteString("Content:\n```diff\n")
+		prompt.WriteString(hunk.Content)
+		prompt.WriteString("```\n")
+	}
+
+	// Request structured output.
+	prompt.WriteString("\n\nProvide your analysis as a JSON object with this structure:\n")
+	prompt.WriteString("```json\n")
+	prompt.WriteString("{\n")
+	prompt.WriteString("  \"assignments\": [\n")
+	prompt.WriteString("    {\n")
+	prompt.WriteString("      \"hunk_index\": 0,  // 0-based index of the hunk\n")
+	prompt.WriteString("      \"commit_sha\": \"abc123...\",  // Full SHA of the target commit\n")
+	prompt.WriteString("      \"confidence\": 0.95,  // Confidence score 0.0 to 1.0\n")
+	prompt.WriteString("      \"reasoning\": \"This hunk modifies the same function...\",\n")
+	prompt.WriteString("      \"alternatives\": [  // Optional, only if strategy is 'interactive'\n")
+	prompt.WriteString("        {\n")
+	prompt.WriteString("          \"commit_sha\": \"def456...\",\n")
+	prompt.WriteString("          \"confidence\": 0.7,\n")
+	prompt.WriteString("          \"reasoning\": \"Could also relate to...\"\n")
+	prompt.WriteString("        }\n")
+	prompt.WriteString("      ]\n")
+	prompt.WriteString("    }\n")
+	prompt.WriteString("  ],\n")
+	prompt.WriteString("  \"unmatched_hunks\": [0, 2]  // Indices of hunks that don't match any commit\n")
+	prompt.WriteString("}\n")
+	prompt.WriteString("```\n\n")
+	prompt.WriteString("Return ONLY the JSON object, no additional explanation.")
+
+	return prompt.String()
+}
+
+// absorbJSONResponse is the structure for parsing the AI's JSON response.
+type absorbJSONResponse struct {
+	Assignments []struct {
+		HunkIndex    int     `json:"hunk_index"`
+		CommitSHA    string  `json:"commit_sha"`
+		Confidence   float64 `json:"confidence"`
+		Reasoning    string  `json:"reasoning"`
+		Alternatives []struct {
+			CommitSHA  string  `json:"commit_sha"`
+			Confidence float64 `json:"confidence"`
+			Reasoning  string  `json:"reasoning"`
+		} `json:"alternatives,omitempty"`
+	} `json:"assignments"`
+	UnmatchedHunks []int `json:"unmatched_hunks"`
+}
+
+// parseAbsorbResponse parses the JSON response from the AI.
+func (c *ClaudeCLI) parseAbsorbResponse(response string, req *AbsorbRequest) (*AbsorbResponse, error) {
+	// Clean the response to extract JSON.
+	response = strings.TrimSpace(response)
+
+	// Remove code block markers if present.
+	if strings.Contains(response, "```json") {
+		start := strings.Index(response, "{")
+		end := strings.LastIndex(response, "}")
+		if start >= 0 && end > start {
+			response = response[start : end+1]
+		}
+	}
+
+	// Parse JSON.
+	var jsonResp absorbJSONResponse
+	if err := json.Unmarshal([]byte(response), &jsonResp); err != nil {
+		// Try to extract JSON from the response.
+		lines := strings.Split(response, "\n")
+		var jsonStr strings.Builder
+		inJSON := false
+		for _, line := range lines {
+			if strings.Contains(line, "{") {
+				inJSON = true
+			}
+			if inJSON {
+				jsonStr.WriteString(line + "\n")
+			}
+			if strings.Contains(line, "}") && inJSON {
+				break
+			}
+		}
+		if jsonStr.Len() > 0 {
+			if err := json.Unmarshal([]byte(jsonStr.String()), &jsonResp); err != nil {
+				return nil, fmt.Errorf("failed to parse JSON: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("no valid JSON found in response")
+		}
+	}
+
+	// Convert to AbsorbResponse.
+	resp := &AbsorbResponse{
+		Assignments:    []HunkAssignment{},
+		UnmatchedHunks: []git.Hunk{},
+	}
+
+	// Track which hunks were assigned.
+	assignedHunks := make(map[int]bool)
+
+	// Process assignments.
+	for _, assignment := range jsonResp.Assignments {
+		if assignment.HunkIndex < 0 || assignment.HunkIndex >= len(req.Hunks) {
+			continue
+		}
+
+		hunk := req.Hunks[assignment.HunkIndex]
+		assignedHunks[assignment.HunkIndex] = true
+
+		// Find commit message for this SHA.
+		var commitMessage string
+		for _, commit := range req.Commits {
+			if strings.HasPrefix(commit.SHA, assignment.CommitSHA[:8]) {
+				lines := strings.Split(commit.Message, "\n")
+				commitMessage = lines[0]
+				assignment.CommitSHA = commit.SHA // Use full SHA.
+				break
+			}
+		}
+
+		hunkAssignment := HunkAssignment{
+			Hunk:          hunk,
+			CommitSHA:     assignment.CommitSHA,
+			CommitMessage: commitMessage,
+			Confidence:    assignment.Confidence,
+			Reasoning:     assignment.Reasoning,
+		}
+
+		// Process alternatives.
+		for _, alt := range assignment.Alternatives {
+			var altMessage string
+			for _, commit := range req.Commits {
+				if strings.HasPrefix(commit.SHA, alt.CommitSHA[:8]) {
+					lines := strings.Split(commit.Message, "\n")
+					altMessage = lines[0]
+					alt.CommitSHA = commit.SHA
+					break
+				}
+			}
+
+			hunkAssignment.Alternatives = append(hunkAssignment.Alternatives, AlternativeAssignment{
+				CommitSHA:     alt.CommitSHA,
+				CommitMessage: altMessage,
+				Confidence:    alt.Confidence,
+				Reasoning:     alt.Reasoning,
+			})
+		}
+
+		// Apply confidence threshold if using best-match strategy.
+		if req.Strategy == "best-match" && assignment.Confidence < req.ConfidenceThreshold {
+			resp.UnmatchedHunks = append(resp.UnmatchedHunks, hunk)
+		} else {
+			resp.Assignments = append(resp.Assignments, hunkAssignment)
+		}
+	}
+
+	// Process unmatched hunks.
+	for _, idx := range jsonResp.UnmatchedHunks {
+		if idx >= 0 && idx < len(req.Hunks) && !assignedHunks[idx] {
+			resp.UnmatchedHunks = append(resp.UnmatchedHunks, req.Hunks[idx])
+		}
+	}
+
+	// Check for any hunks that weren't mentioned.
+	for i, hunk := range req.Hunks {
+		if !assignedHunks[i] {
+			found := false
+			for _, idx := range jsonResp.UnmatchedHunks {
+				if idx == i {
+					found = true
+					break
+				}
+			}
+			if !found {
+				// Hunk wasn't assigned or marked as unmatched.
+				resp.UnmatchedHunks = append(resp.UnmatchedHunks, hunk)
+			}
+		}
+	}
+
+	return resp, nil
 }

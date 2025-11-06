@@ -3,6 +3,8 @@ package ai
 import (
 	"context"
 	"fmt"
+
+	"github.com/gussy/cmt/internal/git"
 )
 
 // MessageFormat represents the format of the commit message.
@@ -65,6 +67,9 @@ type Provider interface {
 	// RegenerateWithFeedback regenerates a commit message with user feedback.
 	RegenerateWithFeedback(ctx context.Context, req *CommitRequest, previousMessage string, feedback string) (*CommitResponse, error)
 
+	// AnalyzeHunkAssignment analyzes which hunks should be absorbed into which commits.
+	AnalyzeHunkAssignment(ctx context.Context, req *AbsorbRequest) (*AbsorbResponse, error)
+
 	// GetDefaultModel returns the default model for this provider.
 	GetDefaultModel() string
 
@@ -111,4 +116,58 @@ func NewProviderError(provider, message string, err error) error {
 		Message:  message,
 		Err:      err,
 	}
+}
+
+// AbsorbRequest contains the information needed for absorb analysis.
+type AbsorbRequest struct {
+	// Hunks are the diff hunks to analyze.
+	Hunks []git.Hunk
+	// Commits are the candidate commits with their diffs.
+	Commits []git.CommitInfo
+	// Strategy for handling ambiguous assignments.
+	Strategy string // "interactive" or "best-match".
+	// ConfidenceThreshold is the minimum confidence for auto-assignment.
+	ConfidenceThreshold float64
+	// Model is the AI model to use.
+	Model string
+	// Temperature controls randomness.
+	Temperature float64
+	// MaxTokens limits the response length.
+	MaxTokens int
+}
+
+// AbsorbResponse contains the hunk assignments from AI analysis.
+type AbsorbResponse struct {
+	// Assignments maps each hunk to a commit.
+	Assignments []HunkAssignment
+	// UnmatchedHunks are hunks that couldn't be assigned.
+	UnmatchedHunks []git.Hunk
+	// TokensUsed is the number of tokens consumed.
+	TokensUsed int
+	// Model is the actual model used.
+	Model string
+}
+
+// HunkAssignment represents the AI's assignment of a hunk to a commit.
+type HunkAssignment struct {
+	// Hunk is the hunk being assigned.
+	Hunk git.Hunk
+	// CommitSHA is the target commit SHA.
+	CommitSHA string
+	// CommitMessage is the first line of the commit message.
+	CommitMessage string
+	// Confidence is the AI's confidence in this assignment (0.0 to 1.0).
+	Confidence float64
+	// Reasoning is the AI's explanation for this assignment.
+	Reasoning string
+	// Alternatives are other possible assignments with lower confidence.
+	Alternatives []AlternativeAssignment
+}
+
+// AlternativeAssignment represents an alternative commit for a hunk.
+type AlternativeAssignment struct {
+	CommitSHA     string
+	CommitMessage string
+	Confidence    float64
+	Reasoning     string
 }

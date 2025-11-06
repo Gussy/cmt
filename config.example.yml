@@ -169,6 +169,54 @@ filter_minified: true
 filter_generated: true
 
 # ===================
+# Absorb Settings
+# ===================
+
+# Strategy for creating absorb commits
+# Controls how hunks are absorbed into previous commits:
+#   - "fixup": Creates fixup! commits for later autosquash (safer, default)
+#   - "direct": Directly rewrites history with interactive rebase
+# Fixup is recommended as it allows review before final squashing
+# Default: "fixup"
+# Environment: CMT_ABSORB_STRATEGY
+absorb_strategy: fixup
+
+# Range of commits to analyze for absorption
+# Determines which commits are candidates for receiving hunks:
+#   - "unpushed": Only commits not yet pushed to origin (default, safer)
+#   - "branch-point": All commits since branch diverged from main/master
+# Using "unpushed" prevents rewriting public history
+# Default: "unpushed"
+# Environment: CMT_ABSORB_RANGE
+absorb_range: unpushed
+
+# How to handle ambiguous hunk assignments
+# When a hunk could match multiple commits:
+#   - "interactive": Show alternatives and let user choose (default)
+#   - "best-match": Automatically choose highest confidence match
+# Interactive mode gives more control but takes more time
+# Default: "interactive"
+# Environment: CMT_ABSORB_AMBIGUITY
+absorb_ambiguity: interactive
+
+# Automatically create new commit for unmatched hunks
+# When true: Hunks that don't match any commit get a new commit
+# When false: Unmatched hunks remain staged for manual handling
+# Useful for ensuring all changes are committed
+# Default: true
+# Environment: CMT_ABSORB_AUTO_COMMIT
+absorb_auto_commit: true
+
+# Minimum confidence threshold for auto-assignment
+# Hunks with confidence below this won't be auto-assigned (0.0-1.0)
+# Higher values: More conservative, fewer mistakes
+# Lower values: More aggressive, may have incorrect assignments
+# Only applies when absorb_ambiguity is "best-match"
+# Default: 0.7
+# Environment: CMT_ABSORB_CONFIDENCE
+absorb_confidence: 0.7
+
+# ===================
 # Example Configurations
 # ===================
 
