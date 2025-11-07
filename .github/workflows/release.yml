@@ -61,17 +61,12 @@ jobs:
           echo "${{ secrets.APK_PRIVATE_KEY }}" > /tmp/apk-signing.key
           echo "APK_KEY_PATH=/tmp/apk-signing.key" >> $GITHUB_ENV
 
-      - name: Export public keys for release
+      - name: Export public keys
         run: |
-          mkdir -p dist/keys
-          # Export GPG public key (for DEB/RPM verification)
-          gpg --armor --export ${{ steps.import_gpg.outputs.fingerprint }} > dist/keys/gpg-public.key
-          # Export RSA public key (for APK verification)
-          if [ -n "${{ secrets.APK_PASSPHRASE }}" ]; then
-            echo "${{ secrets.APK_PASSPHRASE }}" | openssl rsa -in /tmp/apk-signing.key \
-              -passin stdin -pubout -out dist/keys/apk-public.key 2>/dev/null
-          else
-            openssl rsa -in /tmp/apk-signing.key -pubout -out dist/keys/apk-public.key
+          mkdir -p keys
+          gpg --armor --export ${{ steps.import_gpg.outputs.fingerprint }} > keys/gpg-public.key
+          if [ -f "/tmp/apk-signing.key" ]; then
+            openssl rsa -in /tmp/apk-signing.key -pubout -out keys/apk-public.key 2>/dev/null || true
           fi
 
       - name: Run GoReleaser
@@ -84,6 +79,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
           GPG_KEY_PATH: ${{ env.GPG_KEY_PATH }}
+          GPG_FINGERPRINT: ${{ env.GPG_FINGERPRINT }}
           APK_KEY_PATH: ${{ env.APK_KEY_PATH }}
           NFPM_PASSPHRASE: ${{ secrets.NFPM_PASSPHRASE }}
 

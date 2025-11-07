@@ -143,5 +143,4 @@ release:
   draft: false
   prerelease: auto
   extra_files:
-    - glob: ./dist/keys/*
-      name_template: "{{ .ProjectName }}-{{ .Tag }}-{{ .ArtifactName }}"
+    - glob: ./keys/*
