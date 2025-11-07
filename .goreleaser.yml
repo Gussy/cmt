@@ -33,9 +33,9 @@ archives:
       - completions/*
 
 # Package formats for Linux distributions.
-# Note: GPG signing can be enabled by setting environment variables:
-#   - NFPM_PASSPHRASE (for all packages)
-#   - Or format-specific: NFPM_CMT_DEB_PASSPHRASE, NFPM_CMT_RPM_PASSPHRASE, etc.
+# GPG signing configuration requires:
+#   - GPG_KEY_PATH: Path to GPG private key file
+#   - NFPM_PASSPHRASE: Passphrase to unlock the key
 nfpms:
   - id: packages
     package_name: cmt
@@ -52,6 +52,21 @@ nfpms:
       - archlinux
 
     bindir: /usr/bin
+
+    # GPG signing configuration for each package format.
+    deb:
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+        type: origin
+
+    rpm:
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+
+    apk:
+      signature:
+        key_file: "{{ .Env.APK_KEY_PATH }}"
+        key_name: cmt
 
     # Include shell completions and documentation.
     contents:
