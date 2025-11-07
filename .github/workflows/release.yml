@@ -63,6 +63,16 @@ jobs:
           echo "${{ secrets.APK_PRIVATE_KEY }}" > /tmp/apk-signing.key
           echo "APK_KEY_PATH=/tmp/apk-signing.key" >> $GITHUB_ENV
 
+      - name: Export public keys for release
+        run: |
+          mkdir -p dist/keys
+          # Export GPG public key (for DEB/RPM verification)
+          gpg --batch --yes --armor --export > dist/keys/gpg-public.key
+          # Export RSA public key (for APK verification)
+          echo "${{ secrets.APK_PASSPHRASE }}" | openssl rsa -in /tmp/apk-signing.key \
+            -passin stdin -pubout -out dist/keys/apk-public.key 2>/dev/null || \
+            openssl rsa -in /tmp/apk-signing.key -pubout -out dist/keys/apk-public.key
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

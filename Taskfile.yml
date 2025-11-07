@@ -94,6 +94,18 @@ tasks:
   release:dry:
     desc: Test release without publishing
     cmds:
+      - mkdir -p dist/keys
+      - |
+        if [ -n "$GPG_KEY_PATH" ] && [ -f "$GPG_KEY_PATH" ]; then
+          gpg --import "$GPG_KEY_PATH" 2>/dev/null || true
+          gpg --armor --export > dist/keys/gpg-public.key
+          echo "✓ Exported GPG public key to dist/keys/gpg-public.key"
+        fi
+      - |
+        if [ -n "$APK_KEY_PATH" ] && [ -f "$APK_KEY_PATH" ]; then
+          openssl rsa -in "$APK_KEY_PATH" -pubout -out dist/keys/apk-public.key 2>/dev/null
+          echo "✓ Exported APK public key to dist/keys/apk-public.key"
+        fi
       - goreleaser release --snapshot --clean
     preconditions:
       - sh: command -v goreleaser

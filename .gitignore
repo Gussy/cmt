@@ -6,3 +6,12 @@
 /completions/
 dist/
 .env
+
+# GPG and signing keys
+*.asc
+*.gpg
+private-key.*
+secring.*
+*.key
+*.pgp
+apk-signing.key
