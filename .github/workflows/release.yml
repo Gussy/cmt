@@ -41,21 +41,19 @@ jobs:
           cache: "true"
       
       - name: Import GPG key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
-          gpg --list-secret-keys --keyid-format LONG
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.NFPM_PASSPHRASE }}
 
-      - name: Export GPG key for signing
+      - name: Export GPG key for nfpm signing
         run: |
-          # Configure GPG for non-interactive use
-          export GPG_TTY=$(tty)
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          gpg-connect-agent reloadagent /bye
-
-          # Export the key to a file for GoReleaser to use
-          echo "${{ secrets.NFPM_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback \
-            --passphrase-fd 0 --armor --export-secret-keys > /tmp/gpg-private.key
+          # nfpm requires a key_file path, so export the imported key
+          gpg --batch --yes --pinentry-mode loopback --passphrase "${{ secrets.NFPM_PASSPHRASE }}" \
+            --armor --export-secret-keys ${{ steps.import_gpg.outputs.fingerprint }} > /tmp/gpg-private.key
           echo "GPG_KEY_PATH=/tmp/gpg-private.key" >> $GITHUB_ENV
+          echo "GPG_FINGERPRINT=${{ steps.import_gpg.outputs.fingerprint }}" >> $GITHUB_ENV
 
       - name: Setup APK signing key
         run: |
@@ -67,11 +65,14 @@ jobs:
         run: |
           mkdir -p dist/keys
           # Export GPG public key (for DEB/RPM verification)
-          gpg --batch --yes --armor --export > dist/keys/gpg-public.key
+          gpg --armor --export ${{ steps.import_gpg.outputs.fingerprint }} > dist/keys/gpg-public.key
           # Export RSA public key (for APK verification)
-          echo "${{ secrets.APK_PASSPHRASE }}" | openssl rsa -in /tmp/apk-signing.key \
-            -passin stdin -pubout -out dist/keys/apk-public.key 2>/dev/null || \
+          if [ -n "${{ secrets.APK_PASSPHRASE }}" ]; then
+            echo "${{ secrets.APK_PASSPHRASE }}" | openssl rsa -in /tmp/apk-signing.key \
+              -passin stdin -pubout -out dist/keys/apk-public.key 2>/dev/null
+          else
             openssl rsa -in /tmp/apk-signing.key -pubout -out dist/keys/apk-public.key
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
