@@ -32,6 +32,61 @@ archives:
       - LICENSE
       - completions/*
 
+# Package formats for Linux distributions.
+# Note: GPG signing can be enabled by setting environment variables:
+#   - NFPM_PASSPHRASE (for all packages)
+#   - Or format-specific: NFPM_CMT_DEB_PASSPHRASE, NFPM_CMT_RPM_PASSPHRASE, etc.
+nfpms:
+  - id: packages
+    package_name: cmt
+    vendor: Angus Peart
+    homepage: "https://github.com/gussy/cmt"
+    maintainer: "Angus Peart <angusp@gmail.com>"
+    description: "Generate contextual git commit messages using Claude AI"
+    license: MIT
+
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+
+    bindir: /usr/bin
+
+    # Include shell completions and documentation.
+    contents:
+      - src: ./completions/cmt.bash
+        dst: /usr/share/bash-completion/completions/cmt
+        file_info:
+          mode: 0644
+      - src: ./completions/_cmt
+        dst: /usr/share/zsh/site-functions/_cmt
+        file_info:
+          mode: 0644
+      - src: ./completions/cmt.fish
+        dst: /usr/share/fish/vendor_completions.d/cmt.fish
+        file_info:
+          mode: 0644
+      - src: ./LICENSE
+        dst: /usr/share/doc/cmt/copyright
+        file_info:
+          mode: 0644
+      - src: ./README.md
+        dst: /usr/share/doc/cmt/README.md
+        file_info:
+          mode: 0644
+
+    # Dependencies (none required - static binary).
+    dependencies: []
+
+    # Recommended packages for shell completion support.
+    recommends:
+      - bash-completion
+
+    # Package metadata.
+    section: utils
+    priority: optional
+
 homebrew_casks:
   - repository:
       owner: gussy

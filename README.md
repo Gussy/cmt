@@ -25,6 +25,68 @@
 brew install --cask gussy/tap/cmt
 ```
 
+### Debian/Ubuntu (.deb)
+
+Download the `.deb` package from [GitHub Releases](https://github.com/gussy/cmt/releases) and install:
+
+```bash
+# Download the latest .deb package
+wget https://github.com/gussy/cmt/releases/download/v0.x.x/cmt_0.x.x_amd64.deb
+
+# Install with dpkg
+sudo dpkg -i cmt_0.x.x_amd64.deb
+
+# Or install with apt (resolves dependencies automatically)
+sudo apt install ./cmt_0.x.x_amd64.deb
+```
+
+Shell completions are automatically installed to standard locations.
+
+### RHEL/Fedora/CentOS (.rpm)
+
+Download the `.rpm` package from [GitHub Releases](https://github.com/gussy/cmt/releases) and install:
+
+```bash
+# Download the latest .rpm package
+wget https://github.com/gussy/cmt/releases/download/v0.x.x/cmt_0.x.x_x86_64.rpm
+
+# Install with rpm
+sudo rpm -i cmt_0.x.x_x86_64.rpm
+
+# Or install with dnf/yum (resolves dependencies automatically)
+sudo dnf install cmt_0.x.x_x86_64.rpm
+```
+
+Shell completions are automatically installed to standard locations.
+
+### Alpine Linux (.apk)
+
+Download the `.apk` package from [GitHub Releases](https://github.com/gussy/cmt/releases) and install:
+
+```bash
+# Download the latest .apk package
+wget https://github.com/gussy/cmt/releases/download/v0.x.x/cmt_0.x.x_x86_64.apk
+
+# Install with apk (use --allow-untrusted for unsigned packages)
+sudo apk add --allow-untrusted cmt_0.x.x_x86_64.apk
+```
+
+Shell completions are automatically installed to standard locations.
+
+### Arch Linux
+
+Download the `.pkg.tar.zst` package from [GitHub Releases](https://github.com/gussy/cmt/releases) and install:
+
+```bash
+# Download the latest Arch package
+wget https://github.com/gussy/cmt/releases/download/v0.x.x/cmt_0.x.x_x86_64.pkg.tar.zst
+
+# Install with pacman
+sudo pacman -U cmt_0.x.x_x86_64.pkg.tar.zst
+```
+
+Shell completions are automatically installed to standard locations.
+
 ### Manual Installation
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/gussy/cmt/releases):

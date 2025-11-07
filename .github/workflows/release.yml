@@ -39,6 +39,11 @@ jobs:
         uses: cashapp/activate-hermit@v1.1.4
         with:
           cache: "true"
+      
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
+          gpg --list-secret-keys --keyid-format LONG
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -49,3 +54,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          NFPM_PASSPHRASE: ${{ secrets.NFPM_PASSPHRASE }}
+
