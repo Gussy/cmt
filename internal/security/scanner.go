@@ -24,14 +24,14 @@ func NewScanner() *Scanner {
 		"GitHub Token": regexp.MustCompile(`gh[ps]_[a-zA-Z0-9]{36}`),
 
 		// Private Keys
-		"Private Key":     regexp.MustCompile(`-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----`),
-		"SSH DSA Key":     regexp.MustCompile(`-----BEGIN DSA PRIVATE KEY-----`),
+		"Private Key": regexp.MustCompile(`-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----`),
+		"SSH DSA Key": regexp.MustCompile(`-----BEGIN DSA PRIVATE KEY-----`),
 
 		// API Keys
-		"Google API Key":  regexp.MustCompile(`AIza[0-9A-Za-z\-_]{35}`),
-		"Slack Token":     regexp.MustCompile(`xox[baprs]-([0-9a-zA-Z]{10,48})`),
-		"Stripe API Key":  regexp.MustCompile(`sk_live_[0-9a-zA-Z]{24}`),
-		"NPM Token":       regexp.MustCompile(`npm_[a-zA-Z0-9]{36}`),
+		"Google API Key": regexp.MustCompile(`AIza[0-9A-Za-z\-_]{35}`),
+		"Slack Token":    regexp.MustCompile(`xox[baprs]-([0-9a-zA-Z]{10,48})`),
+		"Stripe API Key": regexp.MustCompile(`sk_live_[0-9a-zA-Z]{24}`),
+		"NPM Token":      regexp.MustCompile(`npm_[a-zA-Z0-9]{36}`),
 
 		// Generic Patterns
 		"Generic API Key": regexp.MustCompile(`[aA][pP][iI]_?[kK][eE][yY].*['\"]([0-9a-zA-Z]{32,45})['\"]`),

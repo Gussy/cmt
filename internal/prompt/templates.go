@@ -67,14 +67,14 @@ var Templates = map[string]*Template{
 
 // Builder helps construct prompts for commit message generation.
 type Builder struct {
-	format       string
-	scope        string
-	hint         string
-	template     *Template
-	stagedFiles  []string
-	diff         string
-	isOneLine    bool
-	isVerbose    bool
+	format      string
+	scope       string
+	hint        string
+	template    *Template
+	stagedFiles []string
+	diff        string
+	isOneLine   bool
+	isVerbose   bool
 }
 
 // NewBuilder creates a new prompt builder.
