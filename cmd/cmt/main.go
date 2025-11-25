@@ -36,6 +36,11 @@ func main() {
 				Usage:   "Stage all changes before generating commit message",
 			},
 			&cli.BoolFlag{
+				Name:    "stage-updated",
+				Aliases: []string{"u"},
+				Usage:   "Stage updated files before generating commit message",
+			},
+			&cli.BoolFlag{
 				Name:    "yes",
 				Aliases: []string{"y"},
 				Usage:   "Skip confirmation and auto-commit",
@@ -150,6 +155,11 @@ func runCommit(ctx context.Context, cmd *cli.Command) error {
 	if cmd.Bool("stage-all") {
 		ui.SimpleProgress(ui.ProgressMessages.StagingFiles)
 		if err := repo.StageAll(ctx); err != nil {
+			return fmt.Errorf("failed to stage files: %w", err)
+		}
+	} else if cmd.Bool("stage-updated") {
+		ui.SimpleProgress(ui.ProgressMessages.StagingUpdatedFiles)
+		if err := repo.StageUpdated(ctx); err != nil {
 			return fmt.Errorf("failed to stage files: %w", err)
 		}
 	}
@@ -379,7 +389,7 @@ func runCommit(ctx context.Context, cmd *cli.Command) error {
 
 			case ui.ReviewEditInline:
 				// Inline editing was done in the UI, update the message
-				response.Message = feedback  // feedback contains the edited message
+				response.Message = feedback // feedback contains the edited message
 				// Loop back to show the edited message for review
 				continue
 			}

@@ -191,6 +191,18 @@ func (r *Repository) StageAll(ctx context.Context) error {
 	return nil
 }
 
+// StageUpdated stages all updated files in the repository.
+func (r *Repository) StageUpdated(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, "git", "add", "-u")
+	cmd.Dir = r.Path
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to stage updated files: %w", err)
+	}
+
+	return nil
+}
+
 // StageFiles stages specific files.
 func (r *Repository) StageFiles(ctx context.Context, files []string) error {
 	if len(files) == 0 {
@@ -574,6 +586,7 @@ func (r *Repository) StashPop(ctx context.Context) error {
 
 	return nil
 }
+
 // GetCommitsFromBranchPoint returns commits from branch point to HEAD.
 func (r *Repository) GetCommitsFromBranchPoint(ctx context.Context) ([]CommitInfo, error) {
 	branchPoint, err := r.GetBranchPoint(ctx)

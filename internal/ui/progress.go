@@ -118,21 +118,23 @@ func ShowProgress(message string) *tea.Program {
 
 // ProgressMessages defines common progress messages.
 var ProgressMessages = struct {
-	StagingFiles      string
-	AnalyzingChanges  string
-	GeneratingMessage string
-	Regenerating      string
-	ScanningSecrets   string
-	CreatingCommit    string
-	PushingChanges    string
+	StagingFiles        string
+	StagingUpdatedFiles string
+	AnalyzingChanges    string
+	GeneratingMessage   string
+	Regenerating        string
+	ScanningSecrets     string
+	CreatingCommit      string
+	PushingChanges      string
 }{
-	StagingFiles:      "Staging all changes...",
-	AnalyzingChanges:  "Analyzing changes...",
-	GeneratingMessage: "Generating commit message with Claude...",
-	Regenerating:      "Regenerating with feedback...",
-	ScanningSecrets:   "Scanning for secrets...",
-	CreatingCommit:    "Creating commit...",
-	PushingChanges:    "Pushing to remote...",
+	StagingFiles:        "Staging all changes...",
+	StagingUpdatedFiles: "Staging updated files...",
+	AnalyzingChanges:    "Analyzing changes...",
+	GeneratingMessage:   "Generating commit message with Claude...",
+	Regenerating:        "Regenerating with feedback...",
+	ScanningSecrets:     "Scanning for secrets...",
+	CreatingCommit:      "Creating commit...",
+	PushingChanges:      "Pushing to remote...",
 }
 
 // SimpleProgress shows a simple inline progress message without Bubble Tea.
