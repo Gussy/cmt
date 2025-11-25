@@ -29,23 +29,23 @@ const (
 
 // reviewModel is the Bubble Tea model for the commit review screen.
 type reviewModel struct {
-	message        string          // The generated commit message.
-	diff           string          // The git diff to display.
-	viewport       viewport.Model  // Scrollable viewport for diff.
-	textarea       textarea.Model  // Textarea for feedback input.
-	showFeedback   bool            // Whether to show feedback input.
-	editMode       bool            // Whether in inline edit mode.
-	editTextarea   textarea.Model  // Textarea for editing message.
-	preferExternal bool            // Whether to prefer external editor (based on config).
-	action         ReviewAction    // User's final decision.
-	feedback       string          // User's feedback for regeneration.
-	width          int             // Terminal width.
-	height         int             // Terminal height.
-	ready          bool            // Whether the model is ready.
-	done           bool            // Whether the review is complete.
+	message        string         // The generated commit message.
+	diff           string         // The git diff to display.
+	viewport       viewport.Model // Scrollable viewport for diff.
+	textarea       textarea.Model // Textarea for feedback input.
+	showFeedback   bool           // Whether to show feedback input.
+	editMode       bool           // Whether in inline edit mode.
+	editTextarea   textarea.Model // Textarea for editing message.
+	preferExternal bool           // Whether to prefer external editor (based on config).
+	action         ReviewAction   // User's final decision.
+	feedback       string         // User's feedback for regeneration.
+	width          int            // Terminal width.
+	height         int            // Terminal height.
+	ready          bool           // Whether the model is ready.
+	done           bool           // Whether the review is complete.
 
 	// Debug fields
-	debugReserved      int // Reserved height calculated
+	debugReserved       int // Reserved height calculated
 	debugViewportHeight int // Viewport height calculated
 }
 
@@ -53,7 +53,7 @@ type reviewModel struct {
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("63")).  // Changed to a more visible cyan color
+			Foreground(lipgloss.Color("63")). // Changed to a more visible cyan color
 			MarginBottom(1)
 
 	messageBoxStyle = lipgloss.NewStyle().
@@ -427,7 +427,7 @@ func (m reviewModel) viewFooter() string {
 	}
 
 	actions := []struct {
-		text string
+		text  string
 		width int
 	}{
 		{"[y]es - Accept", 0},

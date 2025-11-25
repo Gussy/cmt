@@ -28,21 +28,21 @@ type AbsorbReviewModel struct {
 	ready            bool
 	accepted         bool
 	cancelled        bool
-	mode             string // "review", "alternatives", "feedback"
+	mode             string         // "review", "alternatives", "feedback"
 	modifications    map[int]string // Track modified assignments (index -> new SHA).
 }
 
 // absorbKeyMap defines the key bindings for the absorb review.
 type absorbKeyMap struct {
-	Up          key.Binding
-	Down        key.Binding
-	Accept      key.Binding
-	Cancel      key.Binding
+	Up           key.Binding
+	Down         key.Binding
+	Accept       key.Binding
+	Cancel       key.Binding
 	Alternatives key.Binding
-	Unassign    key.Binding
-	NextHunk    key.Binding
-	PrevHunk    key.Binding
-	Help        key.Binding
+	Unassign     key.Binding
+	NextHunk     key.Binding
+	PrevHunk     key.Binding
+	Help         key.Binding
 }
 
 var absorbKeys = absorbKeyMap{

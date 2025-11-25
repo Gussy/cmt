@@ -393,7 +393,7 @@ func runAbsorb(ctx context.Context, cmd *cli.Command) error {
 	}
 	state := &git.AbsorbState{
 		OriginalHEAD:  headSHA,
-		BackupRef:     backupRef,  // Use new ref format
+		BackupRef:     backupRef, // Use new ref format
 		CurrentBranch: currentBranch,
 		Timestamp:     time.Now().Unix(),
 		Operations: []string{

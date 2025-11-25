@@ -25,7 +25,7 @@ type Config struct {
 	// UI settings
 	ColorOutput bool   `yaml:"color_output"`
 	Interactive bool   `yaml:"interactive"`
-	EditorMode  string `yaml:"editor_mode"`  // "inline" or "external"
+	EditorMode  string `yaml:"editor_mode"` // "inline" or "external"
 
 	// Preprocessing settings
 	MaxDiffTokens   int  `yaml:"max_diff_tokens"`
@@ -34,29 +34,29 @@ type Config struct {
 	FilterGenerated bool `yaml:"filter_generated"`
 
 	// Absorb settings
-	AbsorbStrategy    string  `yaml:"absorb_strategy"`     // "fixup" (default) or "direct"
-	AbsorbRange       string  `yaml:"absorb_range"`        // "unpushed" (default) or "branch-point"
-	AbsorbAmbiguity   string  `yaml:"absorb_ambiguity"`    // "interactive" (default) or "best-match"
-	AbsorbAutoCommit  bool    `yaml:"absorb_auto_commit"`  // true (default) - create commit for unmatched
-	AbsorbConfidence  float64 `yaml:"absorb_confidence"`   // 0.7 (default) - min confidence threshold
+	AbsorbStrategy   string  `yaml:"absorb_strategy"`    // "fixup" (default) or "direct"
+	AbsorbRange      string  `yaml:"absorb_range"`       // "unpushed" (default) or "branch-point"
+	AbsorbAmbiguity  string  `yaml:"absorb_ambiguity"`   // "interactive" (default) or "best-match"
+	AbsorbAutoCommit bool    `yaml:"absorb_auto_commit"` // true (default) - create commit for unmatched
+	AbsorbConfidence float64 `yaml:"absorb_confidence"`  // 0.7 (default) - min confidence threshold
 }
 
 // Default returns the default configuration.
 func Default() *Config {
 	return &Config{
-		Model:           "claude-3-5-sonnet-latest",
-		Temperature:     0.2,
-		MaxTokens:       500,
-		AlwaysScope:     false,
-		Verbose:         false,
-		SkipSecretScan:  false,
-		ColorOutput:     true,
-		Interactive:     true,
-		EditorMode:      "inline",
-		MaxDiffTokens:   16384,
-		FilterBinary:    true,
-		FilterMinified:  true,
-		FilterGenerated: true,
+		Model:            "claude-3-5-sonnet-latest",
+		Temperature:      0.2,
+		MaxTokens:        500,
+		AlwaysScope:      false,
+		Verbose:          false,
+		SkipSecretScan:   false,
+		ColorOutput:      true,
+		Interactive:      true,
+		EditorMode:       "inline",
+		MaxDiffTokens:    16384,
+		FilterBinary:     true,
+		FilterMinified:   true,
+		FilterGenerated:  true,
 		AbsorbStrategy:   "fixup",
 		AbsorbRange:      "unpushed",
 		AbsorbAmbiguity:  "interactive",

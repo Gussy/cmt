@@ -62,15 +62,15 @@ var binaryExtensions = map[string]bool{
 	".rar": true,
 	".7z":  true,
 	// Executables
-	".exe":    true,
-	".dll":    true,
-	".so":     true,
-	".dylib":  true,
-	".app":    true,
-	".deb":    true,
-	".rpm":    true,
-	".dmg":    true,
-	".pkg":    true,
+	".exe":   true,
+	".dll":   true,
+	".so":    true,
+	".dylib": true,
+	".app":   true,
+	".deb":   true,
+	".rpm":   true,
+	".dmg":   true,
+	".pkg":   true,
 	// Media
 	".mp3":  true,
 	".mp4":  true,
@@ -94,19 +94,19 @@ var binaryExtensions = map[string]bool{
 // generatedFiles are filenames that are typically generated or lock files.
 var generatedFiles = map[string]bool{
 	// Lock files
-	"package-lock.json":   true,
-	"yarn.lock":           true,
-	"pnpm-lock.yaml":      true,
-	"go.sum":              true,
-	"Gemfile.lock":        true,
-	"Cargo.lock":          true,
-	"poetry.lock":         true,
-	"composer.lock":       true,
-	"Podfile.lock":        true,
+	"package-lock.json": true,
+	"yarn.lock":         true,
+	"pnpm-lock.yaml":    true,
+	"go.sum":            true,
+	"Gemfile.lock":      true,
+	"Cargo.lock":        true,
+	"poetry.lock":       true,
+	"composer.lock":     true,
+	"Podfile.lock":      true,
 	// System files
-	".DS_Store":           true,
-	"Thumbs.db":           true,
-	"desktop.ini":         true,
+	".DS_Store":   true,
+	"Thumbs.db":   true,
+	"desktop.ini": true,
 }
 
 // Process preprocesses a git diff according to the provided options.
