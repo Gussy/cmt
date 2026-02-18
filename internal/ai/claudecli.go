@@ -320,7 +320,53 @@ func (c *ClaudeCLI) cleanResponse(response string) string {
 		response = strings.Trim(response, "\"")
 	}
 
+	// Strip AI attribution trailers (Co-Authored-By, Signed-off-by, Generated-by, etc.).
+	response = stripAttributionTrailers(response)
+
 	return strings.TrimSpace(response)
+}
+
+// stripAttributionTrailers removes AI attribution lines from commit messages.
+func stripAttributionTrailers(message string) string {
+	lines := strings.Split(message, "\n")
+	var cleaned []string
+	for _, line := range lines {
+		lower := strings.ToLower(strings.TrimSpace(line))
+		if isAttributionLine(lower) {
+			continue
+		}
+		cleaned = append(cleaned, line)
+	}
+	return strings.Join(cleaned, "\n")
+}
+
+// isAttributionLine checks if a line is an AI attribution trailer.
+func isAttributionLine(lower string) bool {
+	// Match git trailers referencing AI/Claude/Anthropic.
+	trailerPrefixes := []string{
+		"co-authored-by:",
+		"signed-off-by:",
+		"generated-by:",
+		"authored-by:",
+	}
+	aiIndicators := []string{
+		"claude",
+		"anthropic",
+		"noreply@anthropic.com",
+		"ai assistant",
+		"generated with",
+	}
+
+	for _, prefix := range trailerPrefixes {
+		if strings.HasPrefix(lower, prefix) {
+			for _, indicator := range aiIndicators {
+				if strings.Contains(lower, indicator) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // splitMessage splits a commit message into title and body.
