@@ -253,8 +253,8 @@ diff --git a/main.go b/main.go
 				FilterBinary: true,
 				MaxTokens:    1000,
 			},
-			contains: []string{"main.go", "hello()"},
-			excludes: []string{"logo.png"},
+			contains: []string{"main.go", "hello()", "logo.png", "binary file content filtered"},
+			excludes: []string{"Binary files"},
 		},
 		{
 			name: "filter minified file",
@@ -268,8 +268,8 @@ diff --git a/app.js b/app.js
 				FilterMinified: true,
 				MaxTokens:      1000,
 			},
-			contains: []string{"app.js", "function app()"},
-			excludes: []string{"bundle.min.js"},
+			contains: []string{"app.js", "function app()", "bundle.min.js", "minified file content filtered"},
+			excludes: []string{"var a=function"},
 		},
 		{
 			name: "filter lock file",
@@ -285,8 +285,8 @@ diff --git a/package.json b/package.json
 				FilterGenerated: true,
 				MaxTokens:       1000,
 			},
-			contains: []string{"package.json", "myapp"},
-			excludes: []string{"package-lock.json", "lockfileVersion"},
+			contains: []string{"package.json", "myapp", "package-lock.json", "generated/lock file content filtered"},
+			excludes: []string{"lockfileVersion"},
 		},
 		{
 			name: "token truncation",
@@ -326,8 +326,38 @@ diff --git a/app.go b/app.go
 				FilterGenerated: true,
 				MaxTokens:       1000,
 			},
-			contains: []string{"app.go", "package main"},
-			excludes: []string{"image.jpg", "styles.min.css", "yarn.lock"},
+			contains: []string{"app.go", "package main", "image.jpg", "styles.min.css", "yarn.lock"},
+			excludes: []string{"Binary files differ", ".class{margin:0}", "dependencies:"},
+		},
+		{
+			name: "deleted binary file only",
+			diff: `diff --git a/image.png b/image.png
+deleted file mode 100644
+index 2e5ca53..0000000
+Binary files a/image.png and /dev/null differ`,
+			opts: Options{
+				FilterBinary:    true,
+				FilterMinified:  true,
+				FilterGenerated: true,
+				MaxTokens:       1000,
+			},
+			contains: []string{"image.png", "deleted file mode", "binary file content filtered"},
+		},
+		{
+			name: "deleted generated file only",
+			diff: `diff --git a/package-lock.json b/package-lock.json
+deleted file mode 100644
+index f9926ad..0000000
+--- a/package-lock.json
++++ /dev/null
+@@ -1 +0,0 @@
+-{"lockfileVersion":2}`,
+			opts: Options{
+				FilterGenerated: true,
+				MaxTokens:       1000,
+			},
+			contains: []string{"package-lock.json", "deleted file mode", "generated/lock file content filtered"},
+			excludes: []string{"lockfileVersion"},
 		},
 	}
 
@@ -391,12 +421,20 @@ diff --git a/main.go b/main.go
 		t.Error("Expected Truncated = false")
 	}
 
-	// Check that only main.go is in the result
+	// Check that main.go content is in the result
 	if !strings.Contains(result, "main.go") {
 		t.Error("Expected result to contain main.go")
 	}
-	if strings.Contains(result, "logo.png") || strings.Contains(result, "bundle.min.js") || strings.Contains(result, "go.sum") {
-		t.Error("Expected result NOT to contain filtered files")
+	// Filtered file headers should still appear with filter notes
+	if !strings.Contains(result, "logo.png") {
+		t.Error("Expected result to contain logo.png header")
+	}
+	if !strings.Contains(result, "binary file content filtered") {
+		t.Error("Expected result to contain binary filter note")
+	}
+	// But filtered file content should not appear
+	if strings.Contains(result, "var a=1") {
+		t.Error("Expected result NOT to contain filtered file content")
 	}
 }
 

@@ -138,15 +138,27 @@ func Process(diff string, opts Options) string {
 			currentFile = extractFilePath(line)
 			skipCurrentFile = shouldSkipFile(currentFile, opts)
 
-			if !skipCurrentFile {
-				result = append(result, line)
-				tokensUsed += lineTokens
+			// Always include the header so the AI knows about all changed files.
+			result = append(result, line)
+			tokensUsed += lineTokens
+
+			if skipCurrentFile {
+				// Add a note about why the content was filtered.
+				note := fmt.Sprintf("(%s)", fileFilterReason(currentFile, opts))
+				result = append(result, note)
+				tokensUsed += estimateTokens(note)
 			}
 			continue
 		}
 
-		// Skip lines for filtered files
+		// Skip content lines for filtered files, but include file
+		// metadata lines (deleted/new file mode, rename info) so
+		// the AI knows the nature of the change.
 		if skipCurrentFile {
+			if isFileMetadataLine(line) {
+				result = append(result, line)
+				tokensUsed += lineTokens
+			}
 			continue
 		}
 
@@ -239,6 +251,38 @@ func shouldSkipFile(path string, opts Options) bool {
 	return false
 }
 
+// fileFilterReason returns a human-readable reason for why a file was filtered.
+func fileFilterReason(path string, opts Options) string {
+	filename := filepath.Base(path)
+	ext := strings.ToLower(filepath.Ext(path))
+
+	if opts.FilterGenerated && generatedFiles[filename] {
+		return "generated/lock file content filtered"
+	}
+	if opts.FilterMinified && (strings.Contains(filename, ".min.js") || strings.Contains(filename, ".min.css")) {
+		return "minified file content filtered"
+	}
+	if opts.FilterBinary && binaryExtensions[ext] {
+		return "binary file content filtered"
+	}
+	return "file content filtered"
+}
+
+// isFileMetadataLine returns true for git diff metadata lines that describe
+// the nature of a file change (deletion, creation, rename, mode change)
+// rather than the actual content diff.
+func isFileMetadataLine(line string) bool {
+	return strings.HasPrefix(line, "deleted file mode") ||
+		strings.HasPrefix(line, "new file mode") ||
+		strings.HasPrefix(line, "old mode") ||
+		strings.HasPrefix(line, "new mode") ||
+		strings.HasPrefix(line, "similarity index") ||
+		strings.HasPrefix(line, "rename from") ||
+		strings.HasPrefix(line, "rename to") ||
+		strings.HasPrefix(line, "copy from") ||
+		strings.HasPrefix(line, "copy to")
+}
+
 // estimateTokens provides a rough estimate of token count for a string.
 // Uses the approximation of ~4 characters per token.
 func estimateTokens(text string) int {
@@ -314,15 +358,27 @@ func ProcessWithStats(diff string, opts Options) (string, *FilterStats) {
 				stats.FilteredFiles++
 			}
 
-			if !skipCurrentFile {
-				result = append(result, line)
-				tokensUsed += lineTokens
+			// Always include the header so the AI knows about all changed files.
+			result = append(result, line)
+			tokensUsed += lineTokens
+
+			if skipCurrentFile {
+				// Add a note about why the content was filtered.
+				note := fmt.Sprintf("(%s)", fileFilterReason(currentFile, opts))
+				result = append(result, note)
+				tokensUsed += estimateTokens(note)
 			}
 			continue
 		}
 
-		// Skip lines for filtered files
+		// Skip content lines for filtered files, but include file
+		// metadata lines (deleted/new file mode, rename info) so
+		// the AI knows the nature of the change.
 		if skipCurrentFile {
+			if isFileMetadataLine(line) {
+				result = append(result, line)
+				tokensUsed += lineTokens
+			}
 			continue
 		}
 
